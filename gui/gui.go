@@ -7,7 +7,6 @@ package gui
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"html/template"
 	"net/http"
@@ -47,6 +46,8 @@ type Config struct {
 	TLSKeyFile string
 	// UseLEHTTPS represents Letsencrypt HTTPS mode.
 	UseLEHTTPS bool
+	// CertCache is the persistent directory for let's encrypt certificates.
+	CertCache string
 	// NoGUITLS starts the webserver listening for plain HTTP.
 	NoGUITLS bool
 	// Domain represents the domain name of the pool.
@@ -252,29 +253,18 @@ func (ui *GUI) Run(ctx context.Context) {
 		case ui.cfg.UseLEHTTPS:
 			certMgr := &autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
-				Cache:      autocert.DirCache("certs"),
+				Cache:      autocert.DirCache(ui.cfg.CertCache),
 				HostPolicy: autocert.HostWhitelist(ui.cfg.Domain),
 			}
 
-			log.Info("Starting GUI server on port 443 (https)")
+			log.Info("Starting GUI server on port 443 (let's encrypt https)")
 			ui.server = &http.Server{
 				WriteTimeout: time.Second * 30,
 				ReadTimeout:  time.Second * 30,
 				IdleTimeout:  time.Second * 30,
 				Addr:         ":https",
 				Handler:      ui.router,
-				TLSConfig: &tls.Config{
-					GetCertificate: certMgr.GetCertificate,
-					MinVersion:     tls.VersionTLS12,
-					CipherSuites: []uint16{
-						tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-						tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-						tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-						tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-						tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-						tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-					},
-				},
+				TLSConfig:    certMgr.TLSConfig(),
 			}
 
 			if err := ui.server.ListenAndServeTLS("", ""); err != nil {

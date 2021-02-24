@@ -117,6 +117,21 @@ The configuration above uses a [Bolt database](https://github.com/etcd-io/bbolt)
 To switch to a [Postgres database](https://www.postgresql.org/) additional config 
 options will be needed, refer to [postgres.md](./docs/postgres.md). 
 
+### Let's encrypt
+
+Unfortunately, when running with let's encrypt enabled the pool must be run as
+root. It is advisable to use a reverse proxy such as `nginx` to handle the ACME
+process. That said, in order to run with Let's encrypt enabled one must enable
+it by specifying `--uselehttps` and `--domain`. ACME uses DNS to verify
+possession of the domain so the provided domain must resolve to the machine it
+is running on. LE requires a certificate cache directory and thus when running
+with `sudo` requires `--homedir` to be set appropriately.
+
+For example:
+```
+$ sudo dcrpool --configfile=/home/pool/.dcrpool/dcrpool.conf --homedir=/home/pool/.dcrpool --uselehttps --domain=pool.mypool.com
+```
+
 ### Example output of a solo pool startup
 
 ```no-highlight

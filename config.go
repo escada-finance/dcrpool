@@ -33,6 +33,7 @@ const (
 	defaultDataDirname           = "data"
 	defaultLogLevel              = "info"
 	defaultLogDirname            = "log"
+	defaultCertCachename         = "lecerts"
 	defaultLogFilename           = "dcrpool.log"
 	defaultDBFilename            = "dcrpool.kv"
 	defaultGUITLSCertFilename    = "dcrpool.cert"
@@ -144,6 +145,7 @@ type config struct {
 	dcrdRPCCerts          []byte
 	net                   *params
 	clientTimeout         time.Duration
+	certCache             string
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -759,6 +761,17 @@ func loadConfig() (*config, []string, error) {
 			fmt.Fprintln(os.Stderr, err)
 			return nil, nil, err
 
+		}
+	}
+
+	// Handle cert cache.
+	if cfg.UseLEHTTPS {
+		cfg.certCache = filepath.Join(cfg.HomeDir, defaultCertCachename)
+		errMkdir := os.MkdirAll(cfg.certCache, 0700)
+		if err != nil {
+			err := fmt.Errorf("%s: %v", funcName, errMkdir)
+			fmt.Fprintln(os.Stderr, err)
+			return nil, nil, err
 		}
 	}
 
