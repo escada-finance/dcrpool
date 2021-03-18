@@ -6,6 +6,8 @@ package gui
 
 import (
 	"net/http"
+	"os/exec"
+	"time"
 
 	"github.com/decred/dcrpool/pool"
 	"github.com/gorilla/csrf"
@@ -156,9 +158,16 @@ func (ui *GUI) rebootClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("reboot request received")
-	r.ParseForm() // may already have been done?
-	log.Infof("ip: %v", r.Form.Get("ip"))
+	log.Infof("Reboot initiated from ip: %v", r.RemoteAddr)
 
 	w.WriteHeader(http.StatusNoContent)
+
+	go func() {
+		// Sleep a bit before hitting the red button
+		time.Sleep(5 * time.Second)
+		err := exec.Command("shutdown", "-r", "now").Run()
+		if err != nil {
+			log.Errorf("could not execute shutdown: %v", err)
+		}
+	}()
 }
