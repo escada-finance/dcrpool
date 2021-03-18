@@ -28,6 +28,7 @@ func NewWebsocketServer() *WebsocketServer {
 // payload represents a websocket update message.
 type payload struct {
 	PoolHashRate      string `json:"poolhashrate,omitempty"`
+	AvgClientHashRate string `json:"avgclienthashrate,omitempty"`
 	LastWorkHeight    uint32 `json:"lastworkheight,omitempty"`
 	LastPaymentHeight uint32 `json:"lastpaymentheight,omitempty"`
 }

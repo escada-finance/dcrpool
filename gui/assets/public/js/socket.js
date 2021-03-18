@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ws.addEventListener('message', function (e) {
         var msg = JSON.parse(e.data);
         updateElement("pool-hash-rate", msg.poolhashrate);
+        updateElement("avg-client-hash-rate", msg.avgclienthashrate);
         updateElement("last-work-height", msg.lastworkheight);
         updateElement("last-payment-height", msg.lastpaymentheight);
     });

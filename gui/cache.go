@@ -75,6 +75,8 @@ type Cache struct {
 	rewardQuotasMtx       sync.RWMutex
 	poolHash              string
 	poolHashMtx           sync.RWMutex
+	avgClientHash         string
+	avgClientHashMtx      sync.RWMutex
 	clients               map[string][]*client
 	clientsMtx            sync.RWMutex
 	pendingPayments       map[string][]*pendingPayment
@@ -229,12 +231,21 @@ func (c *Cache) getPoolHash() string {
 	return c.poolHash
 }
 
+// getAvgClientHash retrieves the average hashrate of all connected mining clients.
+func (c *Cache) getAvgClientHash() string {
+	c.avgClientHashMtx.RLock()
+	defer c.avgClientHashMtx.RUnlock()
+	return c.avgClientHash
+}
+
 // updateHashData refreshes the cached list of  hash data from connected
 // clients, as well as recalculating the total hashrate.
 func (c *Cache) updateHashData(hashData map[string][]*pool.HashData) {
 	clientInfo := make(map[string][]*client)
 	poolHashRate := new(big.Rat).SetInt64(0)
+	clientCount := int64(0)
 	for _, data := range hashData {
+		clientCount += int64(len(data))
 		for _, entry := range data {
 			poolHashRate = poolHashRate.Add(poolHashRate, entry.HashRate)
 			clientInfo[entry.AccountID] = append(clientInfo[entry.AccountID],
@@ -245,10 +256,18 @@ func (c *Cache) updateHashData(hashData map[string][]*pool.HashData) {
 				})
 		}
 	}
+	avgClientHashRate := new(big.Rat).SetInt64(0)
+	if clientCount > 0 {
+		avgClientHashRate = new(big.Rat).Quo(poolHashRate, new(big.Rat).SetInt64(clientCount))
+	}
 
 	c.poolHashMtx.Lock()
 	c.poolHash = hashString(poolHashRate)
 	c.poolHashMtx.Unlock()
+
+	c.avgClientHashMtx.Lock()
+	c.avgClientHash = hashString(avgClientHashRate)
+	c.avgClientHashMtx.Unlock()
 
 	c.clientsMtx.Lock()
 	c.clients = clientInfo

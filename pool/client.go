@@ -38,7 +38,7 @@ const (
 
 	// hashCalcThreshold represents the minimum operating time before a
 	// client's hash rate is calculated.
-	hashCalcThreshold = time.Second * 20
+	hashCalcThreshold = time.Second * 600
 
 	// rollWorkCycle represents the tick interval for asserting the need for
 	// timestamp-rolled work.

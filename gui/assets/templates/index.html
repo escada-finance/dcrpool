@@ -130,7 +130,11 @@
 
     <div class="row">
 
+        {{ if not .PoolStatsData.SoloPool}}
         <div class="col-lg-6 col-12 p-3">
+        {{ else }}
+        <div class="col-lg-12 col-12 p-3">
+        {{ end }}
             <div class="block__content">
                 <h1>Mined by Pool</h1>
                 <table class="table">
@@ -190,6 +194,40 @@
         </div>
 
         {{end}}
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-12 p-3">
+            <div class="block__content">
+                <h1>All Connected Miners ({{.ClientCount}})</h1>
+                <div class="overflow-auto">
+                    <table class="table">
+                        <tr>
+                            <th>Account</th>
+                            <th>IP</th>
+                            <th>Miner</th>
+                            <th>Hash Rate (10 min avg)</th>
+                        </tr>
+                        {{range $accountID, $clients := .ConnectedClients}}
+                        {{range $client := $clients}}
+                        <tr>
+                            <td><span class="dcr-label">{{$accountID}}</span></td>
+                            <td>{{$client.IP}}</td>
+                            <td>{{$client.Miner}}</td>
+                            <td>{{$client.HashRate}}</td>
+                        </tr>
+                        {{end}}
+                        {{else}}
+                        <tr>
+                            <td colspan="100%"><span class="no-data">No miners connected</span></td>
+                        </tr>
+                        {{end}}
+                    </table>
+                </div>
+            </div>
+        </div>
 
     </div>
 </div>

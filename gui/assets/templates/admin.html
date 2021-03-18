@@ -33,15 +33,17 @@
 
         <div class="col-12 p-3">
             <div class="block__content">
-                <h1>All Connected Miners</h1>
+                <h1>All Connected Miners ({{ .ClientCount }}) </h1>
                 <div class="overflow-auto">
                     <table class="table">
                         <tr>
                             <th>Account</th>
                             <th>IP</th>
                             <th>Miner</th>
-                            <th>Hash Rate</th>
+                            <th>Hash Rate (10 min avg)</th>
+                            <th></th>
                         </tr>
+                        {{$csrf := .HeaderData.CSRF}}
                         {{range $accountID, $clients := .ConnectedClients}}
                         {{range $client := $clients}}
                         <tr>
@@ -49,6 +51,13 @@
                             <td>{{$client.IP}}</td>
                             <td>{{$client.Miner}}</td>
                             <td>{{$client.HashRate}}</td>
+                            <td>
+                                <form action="/reboot" method="post" id="reboot{{$client.IP}}">
+                                    {{$csrf}}
+                                    <input type="hidden" name="ip" value="{{$client.IP}}">
+                                    <button class="btn btn-primary btn-small" onclick="$('reboot{{$client.IP}}').submit();$('#reboot-modal').modal();">Reboot</button>
+                                </form>
+                            </td>
                         </tr>
                         {{end}}
                         {{else}}
@@ -65,6 +74,20 @@
 
     {{template "payments" . }}
 
+</div>
+
+<div class="modal fade" id="reboot-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title">Reboot</h1>
+                <button type="button" class="modal-close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>A reboot request has been submitted.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src='/assets/js/socket.js'></script>

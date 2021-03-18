@@ -110,6 +110,7 @@ type poolStatsData struct {
 	LastWorkHeight    uint32
 	LastPaymentHeight uint32
 	PoolHashRate      string
+	AvgMinerHashRate  string
 }
 
 // headerData contains all of the necessary information to render the
@@ -147,6 +148,7 @@ func (ui *GUI) route() {
 	guiRouter.HandleFunc("/admin", ui.adminLogin).Methods("POST")
 	guiRouter.HandleFunc("/backup", ui.downloadDatabaseBackup).Methods("POST")
 	guiRouter.HandleFunc("/logout", ui.adminLogout).Methods("POST")
+	guiRouter.HandleFunc("/reboot", ui.rebootClient).Methods("POST")
 
 	// Paginated endpoints allow the GUI to request pages of data.
 	guiRouter.HandleFunc("/blocks", ui.paginatedBlocks).Methods("GET")
@@ -346,7 +348,7 @@ func (ui *GUI) Run(ctx context.Context) {
 	// any established websockets
 	go func(ctx context.Context) {
 		signalCh := ui.cfg.FetchCacheChannel()
-		ticker := time.NewTicker(15 * time.Second)
+		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
 		for {
@@ -360,7 +362,8 @@ func (ui *GUI) Run(ctx context.Context) {
 
 				ui.cache.updateHashData(hashData)
 				ui.websocketServer.send(payload{
-					PoolHashRate: ui.cache.getPoolHash(),
+					PoolHashRate:      ui.cache.getPoolHash(),
+					AvgClientHashRate: ui.cache.getAvgClientHash(),
 				})
 
 			case msg := <-signalCh:

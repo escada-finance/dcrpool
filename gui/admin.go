@@ -18,6 +18,7 @@ type adminPageData struct {
 	HeaderData            headerData
 	PoolStatsData         poolStatsData
 	ConnectedClients      map[string][]*client
+	ClientCount           int
 	ArchivedPaymentsTotal string
 	ArchivedPayments      []*archivedPayment
 	PendingPaymentsTotal  string
@@ -37,6 +38,10 @@ func (ui *GUI) adminPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clients := ui.cache.getClients()
+	clientCount := 0
+	for _, account := range clients {
+		clientCount += len(account)
+	}
 
 	totalPending := ui.cache.getPendingPaymentsTotal(pool.PoolFeesK)
 	totalArchived := ui.cache.getArchivedPaymentsTotal(pool.PoolFeesK)
@@ -68,8 +73,10 @@ func (ui *GUI) adminPage(w http.ResponseWriter, r *http.Request) {
 			Network:           ui.cfg.ActiveNet.Name,
 			PoolFee:           ui.cfg.PoolFee,
 			SoloPool:          ui.cfg.SoloPool,
+			AvgMinerHashRate:  ui.cache.getAvgClientHash(),
 		},
 		ConnectedClients:      clients,
+		ClientCount:           clientCount,
 		PendingPaymentsTotal:  totalPending,
 		PendingPayments:       pendingPmts,
 		ArchivedPaymentsTotal: totalArchived,
@@ -139,4 +146,19 @@ func (ui *GUI) downloadDatabaseBackup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func (ui *GUI) rebootClient(w http.ResponseWriter, r *http.Request) {
+	session := r.Context().Value(sessionKey).(*sessions.Session)
+
+	if session.Values["IsAdmin"] != true {
+		http.Error(w, "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	log.Info("reboot request received")
+	r.ParseForm() // may already have been done?
+	log.Infof("ip: %v", r.Form.Get("ip"))
+
+	w.WriteHeader(http.StatusNoContent)
 }

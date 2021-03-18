@@ -14,13 +14,15 @@ import (
 // indexPageData contains all of the necessary information to render the index
 // template.
 type indexPageData struct {
-	HeaderData    headerData
-	PoolStatsData poolStatsData
-	MinerPort     string
-	MinedWork     []*minedWork
-	RewardQuotas  []*rewardQuota
-	Address       string
-	ModalError    string
+	HeaderData       headerData
+	PoolStatsData    poolStatsData
+	ConnectedClients map[string][]*client
+	ClientCount      int
+	MinerPort        string
+	MinedWork        []*minedWork
+	RewardQuotas     []*rewardQuota
+	Address          string
+	ModalError       string
 }
 
 // renderIndex renders the index template. It accepts an optional modalError
@@ -50,6 +52,12 @@ func (ui *GUI) renderIndex(w http.ResponseWriter, r *http.Request, modalError st
 			ui.cfg.MinerListen, err)
 	}
 
+	clients := ui.cache.getClients()
+	clientCount := 0
+	for _, account := range clients {
+		clientCount += len(account)
+	}
+
 	data := indexPageData{
 		HeaderData: headerData{
 			CSRF:        csrf.TemplateField(r),
@@ -64,12 +72,15 @@ func (ui *GUI) renderIndex(w http.ResponseWriter, r *http.Request, modalError st
 			Network:           ui.cfg.ActiveNet.Name,
 			PoolFee:           ui.cfg.PoolFee,
 			SoloPool:          ui.cfg.SoloPool,
+			AvgMinerHashRate:  ui.cache.getAvgClientHash(),
 		},
-		RewardQuotas: rewardQuotas,
-		MinedWork:    confirmedWork,
-		MinerPort:    minerPort,
-		ModalError:   modalError,
-		Address:      address,
+		ConnectedClients: clients,
+		ClientCount:      clientCount,
+		RewardQuotas:     rewardQuotas,
+		MinedWork:        confirmedWork,
+		MinerPort:        minerPort,
+		ModalError:       modalError,
+		Address:          address,
 	}
 
 	ui.renderTemplate(w, "index", data)
